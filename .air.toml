@@ -1,0 +1,13 @@
+# .air.toml
+[build]
+bin = ""            # 编译后的二进制文件路径
+cmd = "go run . -c config/config.yaml" # 编译命令
+include_ext = ["go", "tmpl", "html", "css", "js"] # 包含的文件扩展名
+exclude_dir = ["tmp", "vendor"]     # 排除的目录
+
+[log]
+level = "debug" # 日志级别
+
+[watch]
+include_ext = ["go", "tmpl", "html", "css", "js"] # 监视的文件扩展名
+exclude_dir = ["tmp", "vendor"]      # 监视时排除的目录

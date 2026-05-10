@@ -1,0 +1,373 @@
+definitions:
+  health.ImportDataResp:
+    properties:
+      code:
+        example: 200
+        type: integer
+      data:
+        $ref: '#/definitions/model.ImportLog'
+      message:
+        example: 导入成功
+        type: string
+    type: object
+  health.SyncHealthDataReq:
+    properties:
+      activity_summaries:
+        items:
+          $ref: '#/definitions/model.ActivitySummary'
+        type: array
+      end_date:
+        type: string
+      health_records:
+        items:
+          $ref: '#/definitions/model.HealthRecord'
+        type: array
+      sleep_analyses:
+        items:
+          $ref: '#/definitions/model.SleepAnalysis'
+        type: array
+      start_date:
+        type: string
+      workout_locations:
+        items:
+          $ref: '#/definitions/model.WorkoutLocation'
+        type: array
+      workout_routes:
+        items:
+          $ref: '#/definitions/model.WorkoutRoute'
+        type: array
+      workouts:
+        items:
+          $ref: '#/definitions/model.Workout'
+        type: array
+    required:
+    - end_date
+    - start_date
+    type: object
+  health.SyncHealthDataResp:
+    properties:
+      code:
+        type: integer
+      data:
+        $ref: '#/definitions/health.SyncHealthDataSummary'
+      message:
+        type: string
+    type: object
+  health.SyncHealthDataSummary:
+    properties:
+      activity_summary_count:
+        type: integer
+      health_record_count:
+        type: integer
+      sleep_analysis_count:
+        type: integer
+      workout_count:
+        type: integer
+      workout_location_count:
+        type: integer
+      workout_route_count:
+        type: integer
+    type: object
+  model.ActivitySummary:
+    properties:
+      active_energy_burned:
+        type: number
+      active_energy_burned_goal:
+        type: number
+      active_energy_burned_unit:
+        type: string
+      apple_exercise_time:
+        type: number
+      apple_exercise_time_goal:
+        type: number
+      apple_exercise_time_unit:
+        type: string
+      apple_stand_time:
+        type: number
+      apple_stand_time_goal:
+        type: number
+      apple_stand_time_unit:
+        type: string
+      created_at:
+        type: string
+      date_components:
+        type: string
+      id:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  model.HealthRecord:
+    properties:
+      created_at:
+        type: string
+      creation_date:
+        type: string
+      device:
+        type: string
+      end_date:
+        type: string
+      hk_quantity_type:
+        type: string
+      id:
+        type: integer
+      metadata:
+        type: string
+      source_name:
+        type: string
+      source_version:
+        type: string
+      start_date:
+        type: string
+      type:
+        type: string
+      unit:
+        type: string
+      updated_at:
+        type: string
+      value:
+        type: number
+    type: object
+  model.ImportLog:
+    properties:
+      created_at:
+        type: string
+      error:
+        type: string
+      file_name:
+        type: string
+      file_size:
+        type: integer
+      id:
+        type: integer
+      record_count:
+        type: integer
+      status:
+        type: string
+    type: object
+  model.SleepAnalysis:
+    properties:
+      created_at:
+        type: string
+      creation_date:
+        type: string
+      device:
+        type: string
+      end_date:
+        type: string
+      id:
+        type: integer
+      source_name:
+        type: string
+      source_version:
+        type: string
+      start_date:
+        type: string
+      updated_at:
+        type: string
+      value:
+        type: string
+    type: object
+  model.Workout:
+    properties:
+      created_at:
+        type: string
+      creation_date:
+        type: string
+      device:
+        type: string
+      duration:
+        type: number
+      duration_unit:
+        type: string
+      end_date:
+        type: string
+      id:
+        type: integer
+      metadata:
+        type: string
+      source_name:
+        type: string
+      source_version:
+        type: string
+      start_date:
+        type: string
+      total_distance:
+        type: number
+      total_distance_unit:
+        type: string
+      total_energy_burned:
+        type: number
+      total_energy_burned_unit:
+        type: string
+      updated_at:
+        type: string
+      workout_activity_type:
+        type: string
+    type: object
+  model.WorkoutLocation:
+    properties:
+      altitude:
+        type: number
+      course:
+        type: number
+      created_at:
+        type: string
+      horizontal_accuracy:
+        type: number
+      id:
+        type: integer
+      latitude:
+        type: number
+      longitude:
+        type: number
+      route_id:
+        type: integer
+      speed:
+        type: number
+      timestamp:
+        type: string
+      vertical_accuracy:
+        type: number
+    type: object
+  model.WorkoutRoute:
+    properties:
+      created_at:
+        type: string
+      end_date:
+        type: string
+      id:
+        type: integer
+      source_name:
+        type: string
+      start_date:
+        type: string
+      updated_at:
+        type: string
+      workout_id:
+        type: integer
+    type: object
+  response.Code:
+    enum:
+    - 200
+    - 401
+    - 500
+    - 504
+    type: integer
+    x-enum-varnames:
+    - Code_Success
+    - Code_Unauthorized
+    - Code_Err
+    - Code_CaptchaErr
+  response.CommonResp:
+    properties:
+      code:
+        $ref: '#/definitions/response.Code'
+      msg:
+        type: string
+    type: object
+info:
+  contact:
+    name: buyfakett
+    url: https://github.com/buyfakett
+paths:
+  /api/health/sync:
+    post:
+      consumes:
+      - application/json
+      description: App选定时间段后，将该时间段内的健康数据上传到服务端
+      parameters:
+      - description: 上传数据
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/health.SyncHealthDataReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/health.SyncHealthDataResp'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/health.SyncHealthDataResp'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/health.SyncHealthDataResp'
+      summary: App上传指定时间段的健康数据
+      tags:
+      - 健康数据
+  /api/health/upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: 上传Apple健康导出的zip文件
+      parameters:
+      - description: zip文件
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/health.ImportDataResp'
+      summary: 上传健康数据
+      tags:
+      - 健康数据
+  /api/metrics:
+    get:
+      responses: {}
+      summary: 普罗米修斯监控
+      tags:
+      - 监控
+  /api/ping:
+    get:
+      consumes:
+      - application/json
+      description: 测试网络接口
+      produces:
+      - application/json
+      responses: {}
+      summary: 测试网络接口
+      tags:
+      - 测试
+  /api/server_info:
+    get:
+      consumes:
+      - application/json
+      description: 服务信息
+      produces:
+      - application/json
+      responses: {}
+      summary: 服务信息
+      tags:
+      - 测试
+  /api/user/test_token:
+    get:
+      consumes:
+      - application/json
+      description: 测试token权限
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.CommonResp'
+      summary: 测试token权限
+      tags:
+      - 用户
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: authorization
+    type: apiKey
+swagger: "2.0"
