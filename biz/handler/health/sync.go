@@ -330,7 +330,7 @@ func SyncHealthData(c *gin.Context) {
 		}
 		days := extractDays(req.HealthRecords, func(r model.HealthRecord) time.Time { return r.StartDate })
 		deleteByDays(db, days, "health_records", "start_date")
-		if err := db.Create(&req.HealthRecords).Error; err != nil {
+		if err := db.CreateInBatches(&req.HealthRecords, 1000).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, SyncHealthDataResp{
 				Code:    http.StatusInternalServerError,
 				Message: "健康记录写入失败: " + err.Error(),
@@ -348,7 +348,7 @@ func SyncHealthData(c *gin.Context) {
 		for day := range days {
 			db.Where("date_components = ?", day).Delete(&model.ActivitySummary{})
 		}
-		if err := db.Create(&req.ActivitySummaries).Error; err != nil {
+		if err := db.CreateInBatches(&req.ActivitySummaries, 1000).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, SyncHealthDataResp{
 				Code:    http.StatusInternalServerError,
 				Message: "活动摘要写入失败: " + err.Error(),
@@ -361,7 +361,7 @@ func SyncHealthData(c *gin.Context) {
 	if len(req.SleepAnalyses) > 0 {
 		days := extractDays(req.SleepAnalyses, func(r model.SleepAnalysis) time.Time { return r.StartDate })
 		deleteByDays(db, days, "sleep_analyses", "start_date")
-		if err := db.Create(&req.SleepAnalyses).Error; err != nil {
+		if err := db.CreateInBatches(&req.SleepAnalyses, 1000).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, SyncHealthDataResp{
 				Code:    http.StatusInternalServerError,
 				Message: "睡眠分析写入失败: " + err.Error(),
@@ -377,7 +377,7 @@ func SyncHealthData(c *gin.Context) {
 		}
 		days := extractDays(req.Workouts, func(r model.Workout) time.Time { return r.StartDate })
 		deleteByDays(db, days, "workouts", "start_date")
-		if err := db.Create(&req.Workouts).Error; err != nil {
+		if err := db.CreateInBatches(&req.Workouts, 1000).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, SyncHealthDataResp{
 				Code:    http.StatusInternalServerError,
 				Message: "锻炼记录写入失败: " + err.Error(),
@@ -390,7 +390,7 @@ func SyncHealthData(c *gin.Context) {
 	if len(req.WorkoutRoutes) > 0 {
 		days := extractDays(req.WorkoutRoutes, func(r model.WorkoutRoute) time.Time { return r.StartDate })
 		deleteByDays(db, days, "workout_routes", "start_date")
-		if err := db.Create(&req.WorkoutRoutes).Error; err != nil {
+		if err := db.CreateInBatches(&req.WorkoutRoutes, 1000).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, SyncHealthDataResp{
 				Code:    http.StatusInternalServerError,
 				Message: "锻炼路线写入失败: " + err.Error(),
@@ -403,7 +403,7 @@ func SyncHealthData(c *gin.Context) {
 	if len(req.WorkoutLocations) > 0 {
 		days := extractDays(req.WorkoutLocations, func(r model.WorkoutLocation) time.Time { return r.Timestamp })
 		deleteByDays(db, days, "workout_locations", "timestamp")
-		if err := db.Create(&req.WorkoutLocations).Error; err != nil {
+		if err := db.CreateInBatches(&req.WorkoutLocations, 1000).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, SyncHealthDataResp{
 				Code:    http.StatusInternalServerError,
 				Message: "锻炼位置写入失败: " + err.Error(),
