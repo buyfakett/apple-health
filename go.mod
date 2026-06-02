@@ -3,13 +3,13 @@ module apple_health
 go 1.26.3
 
 require (
+	github.com/buyfakett/qingfeng v1.7.0
 	github.com/gin-gonic/gin v1.12.0
 	github.com/gookit/slog v0.6.0
 	github.com/prometheus/client_golang v1.23.2
 	github.com/spf13/pflag v1.0.10
 	github.com/spf13/viper v1.21.0
 	github.com/swaggo/swag/v2 v2.0.0-rc5
-	github.com/wdcbot/qingfeng v1.6.8
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.31.1
 )
