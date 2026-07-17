@@ -1,4 +1,15 @@
 definitions:
+  health.GetHealthRedisCacheResp:
+    properties:
+      code:
+        example: 200
+        type: integer
+      data:
+        $ref: '#/definitions/service.HealthCacheRange'
+      message:
+        example: 查询成功
+        type: string
+    type: object
   health.ImportDataResp:
     properties:
       code:
@@ -8,6 +19,29 @@ definitions:
         $ref: '#/definitions/model.ImportLog'
       message:
         example: 导入成功
+        type: string
+    type: object
+  health.RebuildHealthRedisCacheReq:
+    properties:
+      end_date:
+        example: "2024-01-31"
+        type: string
+      start_date:
+        example: "2024-01-01"
+        type: string
+    required:
+    - end_date
+    - start_date
+    type: object
+  health.RebuildHealthRedisCacheResp:
+    properties:
+      code:
+        example: 200
+        type: integer
+      data:
+        $ref: '#/definitions/service.HealthCacheWriteSummary'
+      message:
+        example: Redis缓存写入成功
         type: string
     type: object
   health.SyncHealthDataReq:
@@ -58,6 +92,10 @@ definitions:
       activity_summary_count:
         type: integer
       health_record_count:
+        type: integer
+      redis_cache_enabled:
+        type: boolean
+      redis_cache_written:
         type: integer
       sleep_analysis_count:
         type: integer
@@ -266,11 +304,138 @@ definitions:
       msg:
         type: string
     type: object
+  service.DailyStepCount:
+    properties:
+      date:
+        type: string
+      step_count:
+        type: integer
+    type: object
+  service.DailyWorkoutRecord:
+    properties:
+      date:
+        type: string
+      distance_km:
+        type: number
+      distance_text:
+        type: string
+      duration_minutes:
+        type: number
+      duration_text:
+        type: string
+      end_time:
+        type: string
+      energy_kcal:
+        type: number
+      energy_text:
+        type: string
+      source_name:
+        type: string
+      start_time:
+        type: string
+      time_range:
+        type: string
+      workout_name:
+        type: string
+      workout_type:
+        type: string
+    type: object
+  service.HealthCacheRange:
+    properties:
+      end_date:
+        type: string
+      start_date:
+        type: string
+      step_counts:
+        items:
+          $ref: '#/definitions/service.DailyStepCount'
+        type: array
+      workout_records:
+        items:
+          $ref: '#/definitions/service.DailyWorkoutRecord'
+        type: array
+    type: object
+  service.HealthCacheWriteSummary:
+    properties:
+      end_date:
+        type: string
+      skipped_count:
+        type: integer
+      skipped_dates:
+        items:
+          type: string
+        type: array
+      start_date:
+        type: string
+      written_count:
+        type: integer
+      written_dates:
+        items:
+          type: string
+        type: array
+    type: object
 info:
   contact:
     name: buyfakett
     url: https://github.com/buyfakett
 paths:
+  /api/health/redis/daily:
+    get:
+      description: 读取Redis中近days天的步数数组和详细健身记录数组；days最大30
+      parameters:
+      - description: 近N天，1-30
+        in: query
+        name: days
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/health.GetHealthRedisCacheResp'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/health.GetHealthRedisCacheResp'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/health.GetHealthRedisCacheResp'
+      summary: 读取Redis中的每日健康缓存
+      tags:
+      - 健康数据
+  /api/health/redis/rebuild:
+    post:
+      consumes:
+      - application/json
+      description: 从PostgreSQL读取指定日期或日期范围的步数统计和锻炼记录，并写入Redis
+      parameters:
+      - description: 日期范围
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/health.RebuildHealthRedisCacheReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/health.RebuildHealthRedisCacheResp'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/health.RebuildHealthRedisCacheResp'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/health.RebuildHealthRedisCacheResp'
+      summary: 从PG回填指定日期的Redis缓存
+      tags:
+      - 健康数据
   /api/health/sync:
     post:
       consumes:

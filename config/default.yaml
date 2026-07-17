@@ -10,6 +10,12 @@ db:
   user: postgres
   password: postgres
   database: apple_health
+redis:
+  host: ""
+  port: "6379"
+  password: ""
+  db: 0
+  key_prefix: apple_health
 admin:
   username: admin
   password: admin123456

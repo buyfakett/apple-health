@@ -3,6 +3,7 @@ package config
 import (
 	"bytes"
 	"fmt"
+	"net"
 	"os"
 	"strings"
 
@@ -28,6 +29,26 @@ type DbConfig struct {
 	Database string `mapstructure:"database"`
 }
 
+type RedisConfig struct {
+	Host      string `mapstructure:"host"`
+	Port      string `mapstructure:"port"`
+	Password  string `mapstructure:"password"`
+	DB        int    `mapstructure:"db"`
+	KeyPrefix string `mapstructure:"key_prefix"`
+}
+
+func (c RedisConfig) Enabled() bool {
+	return strings.TrimSpace(c.Host) != ""
+}
+
+func (c RedisConfig) Address() string {
+	port := strings.TrimSpace(c.Port)
+	if port == "" {
+		port = "6379"
+	}
+	return net.JoinHostPort(strings.TrimSpace(c.Host), port)
+}
+
 type AdminConfig struct {
 	Username string `mapstructure:"username"`
 	Password string `mapstructure:"password"`
@@ -36,6 +57,7 @@ type AdminConfig struct {
 type AppConfig struct {
 	Server ServerConfig `mapstructure:"server"`
 	Db     DbConfig     `mapstructure:"db"`
+	Redis  RedisConfig  `mapstructure:"redis"`
 	Admin  AdminConfig  `mapstructure:"admin"`
 }
 
@@ -91,4 +113,10 @@ func InitConfig(defaultConfigContent []byte) {
 	// 7. 设置默认值
 	Cfg.Server.Name = ServerName
 	Cfg.Server.Author = Author
+	if Cfg.Redis.Port == "" {
+		Cfg.Redis.Port = "6379"
+	}
+	if Cfg.Redis.KeyPrefix == "" {
+		Cfg.Redis.KeyPrefix = ServerName
+	}
 }

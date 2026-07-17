@@ -12,5 +12,7 @@ func healthRoutes(apiGroup *gin.RouterGroup) {
 	{
 		healthGroup.POST("/upload", mw.TokenAuthMiddleware(), hHealth.UploadHealthData)
 		healthGroup.POST("/sync", mw.TokenAuthMiddleware(), hHealth.SyncHealthData)
+		healthGroup.POST("/redis/rebuild", mw.TokenAuthMiddleware(), hHealth.RebuildHealthRedisCache)
+		healthGroup.GET("/redis/daily", hHealth.GetHealthRedisCache)
 	}
 }

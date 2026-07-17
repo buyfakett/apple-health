@@ -3,6 +3,7 @@ package health
 import (
 	"apple_health/biz/dal"
 	"apple_health/biz/model"
+	"apple_health/biz/service"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -262,12 +263,14 @@ type SyncHealthDataResp struct {
 }
 
 type SyncHealthDataSummary struct {
-	HealthRecordCount    int `json:"health_record_count"`
-	ActivitySummaryCount int `json:"activity_summary_count"`
-	SleepAnalysisCount   int `json:"sleep_analysis_count"`
-	WorkoutCount         int `json:"workout_count"`
-	WorkoutRouteCount    int `json:"workout_route_count"`
-	WorkoutLocationCount int `json:"workout_location_count"`
+	HealthRecordCount    int  `json:"health_record_count"`
+	ActivitySummaryCount int  `json:"activity_summary_count"`
+	SleepAnalysisCount   int  `json:"sleep_analysis_count"`
+	WorkoutCount         int  `json:"workout_count"`
+	WorkoutRouteCount    int  `json:"workout_route_count"`
+	WorkoutLocationCount int  `json:"workout_location_count"`
+	RedisCacheEnabled    bool `json:"redis_cache_enabled"`
+	RedisCacheWritten    int  `json:"redis_cache_written"`
 }
 
 // SyncHealthData App上传指定时间段的健康数据
@@ -411,6 +414,19 @@ func SyncHealthData(c *gin.Context) {
 			return
 		}
 		summary.WorkoutLocationCount = len(req.WorkoutLocations)
+	}
+
+	if service.HealthCacheEnabled() {
+		cacheSummary, err := service.WriteDailyHealthCacheRange(c.Request.Context(), startDate, endDate)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, SyncHealthDataResp{
+				Code:    http.StatusInternalServerError,
+				Message: "Redis缓存写入失败: " + err.Error(),
+			})
+			return
+		}
+		summary.RedisCacheEnabled = true
+		summary.RedisCacheWritten = cacheSummary.WrittenCount
 	}
 
 	c.JSON(http.StatusOK, SyncHealthDataResp{
