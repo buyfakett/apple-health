@@ -10,8 +10,6 @@ import (
 	"math"
 	"strings"
 	"time"
-
-	redis "github.com/redis/go-redis/v9"
 )
 
 var ErrHealthCacheDisabled = errors.New("redis未配置")
@@ -202,19 +200,32 @@ func GetDailyHealthCacheRange(ctx context.Context, start, end time.Time) (*Healt
 		WorkoutRecords: make([]DailyWorkoutRecord, 0),
 	}
 
+	var keys []string
 	for day := startDay; !day.After(endDay); day = day.AddDate(0, 0, 1) {
-		date := day.Format("2006-01-02")
-		payload, err := dal.Redis.Get(ctx, DailyHealthCacheKey(date)).Result()
-		if errors.Is(err, redis.Nil) {
+		keys = append(keys, DailyHealthCacheKey(day.Format("2006-01-02")))
+	}
+
+	if len(keys) == 0 {
+		return result, nil
+	}
+
+	payloads, err := dal.Redis.MGet(ctx, keys...).Result()
+	if err != nil {
+		return nil, err
+	}
+
+	for i, payload := range payloads {
+		if payload == nil {
 			continue
 		}
-		if err != nil {
-			return nil, err
+		str, ok := payload.(string)
+		if !ok {
+			continue
 		}
 
-		item, err := decodeDailyHealthCache(payload)
+		item, err := decodeDailyHealthCache(str)
 		if err != nil {
-			return nil, fmt.Errorf("解析redis缓存失败 date=%s: %w", date, err)
+			return nil, fmt.Errorf("解析redis缓存失败 key=%s: %w", keys[i], err)
 		}
 		appendDailyHealthCache(result, item)
 	}
