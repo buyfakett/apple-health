@@ -77,13 +77,13 @@ type HealthCacheRange struct {
 }
 
 type workoutAggregateRow struct {
-	StartDate           time.Time
-	EndDate             time.Time
-	WorkoutActivityType string
-	DurationMinutes     float64
-	DistanceKM          float64
-	EnergyKCal          float64
-	SourceName          string
+	StartDate           time.Time `gorm:"column:start_date"`
+	EndDate             time.Time `gorm:"column:end_date"`
+	WorkoutActivityType string    `gorm:"column:workout_activity_type"`
+	DurationMinutes     float64   `gorm:"column:duration_minutes"`
+	DistanceKM          float64   `gorm:"column:distance_km"`
+	EnergyKCal          float64   `gorm:"column:energy_kcal"`
+	SourceName          string    `gorm:"column:source_name"`
 }
 
 var workoutActivityDisplayNames = map[string]string{
@@ -290,8 +290,8 @@ SELECT
 			SELECT SUM(hr.value)::numeric
 			FROM health_records hr
 			WHERE hr.type IN ('DistanceWalkingRunning', 'DistanceCycling', 'DistanceSwimming')
-				AND hr.start_date >= w.start_date
-				AND hr.end_date <= w.end_date
+				AND hr.start_date < w.end_date
+				AND hr.end_date > w.start_date
 		),
 		0::numeric
 	), 2)::float8 AS distance_km,
@@ -301,8 +301,8 @@ SELECT
 			SELECT SUM(hr.value)::numeric
 			FROM health_records hr
 			WHERE hr.type = 'ActiveEnergyBurned'
-				AND hr.start_date >= w.start_date
-				AND hr.end_date <= w.end_date
+				AND hr.start_date < w.end_date
+				AND hr.end_date > w.start_date
 		),
 		0::numeric
 	), 1)::float8 AS energy_kcal,
