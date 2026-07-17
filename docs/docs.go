@@ -19,6 +19,93 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/api/health/redis/daily": {
+            "get": {
+                "description": "读取Redis中近days天的步数数组和详细健身记录数组；days最大30",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "健康数据"
+                ],
+                "summary": "读取Redis中的每日健康缓存",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "近N天，1-30",
+                        "name": "days",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/health.GetHealthRedisCacheResp"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/health.GetHealthRedisCacheResp"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/health.GetHealthRedisCacheResp"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/health/redis/rebuild": {
+            "post": {
+                "description": "从PostgreSQL读取指定日期或日期范围的步数统计和锻炼记录，并写入Redis",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "健康数据"
+                ],
+                "summary": "从PG回填指定日期的Redis缓存",
+                "parameters": [
+                    {
+                        "description": "日期范围",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/health.RebuildHealthRedisCacheReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/health.RebuildHealthRedisCacheResp"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/health.RebuildHealthRedisCacheResp"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/health.RebuildHealthRedisCacheResp"
+                        }
+                    }
+                }
+            }
+        },
         "/api/health/sync": {
             "post": {
                 "description": "App选定时间段后，将该时间段内的健康数据上传到服务端",
@@ -163,6 +250,22 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "health.GetHealthRedisCacheResp": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 200
+                },
+                "data": {
+                    "$ref": "#/definitions/service.HealthCacheRange"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "查询成功"
+                }
+            }
+        },
         "health.ImportDataResp": {
             "type": "object",
             "properties": {
@@ -176,6 +279,39 @@ const docTemplate = `{
                 "message": {
                     "type": "string",
                     "example": "导入成功"
+                }
+            }
+        },
+        "health.RebuildHealthRedisCacheReq": {
+            "type": "object",
+            "required": [
+                "end_date",
+                "start_date"
+            ],
+            "properties": {
+                "end_date": {
+                    "type": "string",
+                    "example": "2024-01-31"
+                },
+                "start_date": {
+                    "type": "string",
+                    "example": "2024-01-01"
+                }
+            }
+        },
+        "health.RebuildHealthRedisCacheResp": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 200
+                },
+                "data": {
+                    "$ref": "#/definitions/service.HealthCacheWriteSummary"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Redis缓存写入成功"
                 }
             }
         },
@@ -251,6 +387,12 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "health_record_count": {
+                    "type": "integer"
+                },
+                "redis_cache_enabled": {
+                    "type": "boolean"
+                },
+                "redis_cache_written": {
                     "type": "integer"
                 },
                 "sleep_analysis_count": {
@@ -562,6 +704,113 @@ const docTemplate = `{
                 },
                 "msg": {
                     "type": "string"
+                }
+            }
+        },
+        "service.DailyStepCount": {
+            "type": "object",
+            "properties": {
+                "date": {
+                    "type": "string"
+                },
+                "step_count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "service.DailyWorkoutRecord": {
+            "type": "object",
+            "properties": {
+                "date": {
+                    "type": "string"
+                },
+                "distance_km": {
+                    "type": "number"
+                },
+                "distance_text": {
+                    "type": "string"
+                },
+                "duration_minutes": {
+                    "type": "number"
+                },
+                "duration_text": {
+                    "type": "string"
+                },
+                "end_time": {
+                    "type": "string"
+                },
+                "energy_kcal": {
+                    "type": "number"
+                },
+                "energy_text": {
+                    "type": "string"
+                },
+                "source_name": {
+                    "type": "string"
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "time_range": {
+                    "type": "string"
+                },
+                "workout_name": {
+                    "type": "string"
+                },
+                "workout_type": {
+                    "type": "string"
+                }
+            }
+        },
+        "service.HealthCacheRange": {
+            "type": "object",
+            "properties": {
+                "end_date": {
+                    "type": "string"
+                },
+                "start_date": {
+                    "type": "string"
+                },
+                "step_counts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/service.DailyStepCount"
+                    }
+                },
+                "workout_records": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/service.DailyWorkoutRecord"
+                    }
+                }
+            }
+        },
+        "service.HealthCacheWriteSummary": {
+            "type": "object",
+            "properties": {
+                "end_date": {
+                    "type": "string"
+                },
+                "skipped_count": {
+                    "type": "integer"
+                },
+                "skipped_dates": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "start_date": {
+                    "type": "string"
+                },
+                "written_count": {
+                    "type": "integer"
+                },
+                "written_dates": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         }

@@ -11,6 +11,10 @@ import (
 
 // TokenAuthMiddleware 鉴权中间件
 func TokenAuthMiddleware() gin.HandlerFunc {
+	return tokenAuthMiddleware()
+}
+
+func tokenAuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 获取 Authorization Header
 		authHeader := c.Request.Header.Get("Authorization")

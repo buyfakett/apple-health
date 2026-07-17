@@ -42,6 +42,18 @@ func main() {
 	gin.ForceConsoleColor()
 	r := gin.Default()
 
+	// 关闭跨域
+	r.Use(func(c *gin.Context) {
+		c.Header("Access-Control-Allow-Origin", "*")
+		c.Header("Access-Control-Allow-Methods", "GET, OPTIONS")
+		c.Header("Access-Control-Allow-Headers", "Content-Type")
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+		c.Next()
+	})
+
 	// 注册路由
 	genrouter.RegisterRoutes(r)
 

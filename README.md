@@ -27,6 +27,7 @@
 - Go
 - Gin Web Framework
 - PostgreSQL
+- Redis（可选）
 - GORM
 - Grafana
 
@@ -50,7 +51,7 @@ server:
   log_level: info
   swagger: true
   zone: Asia/Shanghai
-  token: 123qazwsxedc456  # 导入数据时需要此token
+  token: 123qazwsxedc456  # 写接口token
 
 db:
   host: localhost
@@ -58,6 +59,13 @@ db:
   user: postgres
   password: postgres
   database: apple_health
+
+redis:
+  host: ""          # 留空时不启用Redis；启用时可改为 localhost
+  port: "6379"
+  password: ""
+  db: 0
+  key_prefix: apple_health
 ```
 
 或使用环境变量：
@@ -69,6 +77,8 @@ export APPLE_HEALTH_DB_PORT=5432
 export APPLE_HEALTH_DB_USER=postgres
 export APPLE_HEALTH_DB_PASSWORD=postgres
 export APPLE_HEALTH_DB_DATABASE=apple_health
+export APPLE_HEALTH_REDIS_HOST=localhost
+export APPLE_HEALTH_REDIS_PORT=6379
 ```
 
 ### 3. 运行服务
@@ -81,7 +91,7 @@ go run main.go
 
 ### 4. 导入数据
 
-导入数据 API 需要 Token 认证，请在请求头中携带 Token。
+导入数据 API 需要写 Token 认证，请在请求头中携带 `server.token`。
 
 #### 方式一：上传 zip 文件
 
@@ -100,7 +110,49 @@ curl -X POST http://localhost:8888/api/health/import \
   -d '{"file_path": "/path/to/apple_health_export.zip"}'
 ```
 
-**注意：** Token 可以在 `config/default.yaml` 的 `server.token` 中配置
+**注意：** 写 Token 可以在 `config/default.yaml` 的 `server.token` 中配置。
+
+#### Redis 每日缓存
+
+如果配置了 Redis，`/api/health/sync` 会在数据写入 PostgreSQL 后，把请求日期范围内的每日步数统计和锻炼记录写入 Redis。值为 0 的字段不会写入；当天步数为 0 且没有锻炼记录时不会写入 Redis，并会清理该日期可能存在的旧缓存。
+
+Redis 中的每日缓存值只保存原始缓存数据，格式如下：
+
+```json
+{
+  "date": "2024-01-01",
+  "step_count": 12345,
+  "workout_records": [
+    {
+      "start_time": "2024-01-01T08:00:00+08:00",
+      "end_time": "2024-01-01T08:30:00+08:00",
+      "workout_type": "HKWorkoutActivityTypeRunning",
+      "workout_name": "跑步",
+      "duration_minutes": 30,
+      "distance_km": 5.2,
+      "energy_kcal": 320,
+      "source_name": "Apple Watch"
+    }
+  ]
+}
+```
+
+从 PostgreSQL 回填历史日期缓存：
+
+```bash
+curl -X POST http://localhost:8888/api/health/redis/rebuild \
+  -H "Authorization: Bearer 123qazwsxedc456" \
+  -H "Content-Type: application/json" \
+  -d '{"start_date": "2024-01-01", "end_date": "2024-01-31"}'
+```
+
+读取前端展示用的近 N 天每日缓存，返回步数数组和详细健身记录数组，最多 30 天：
+
+```bash
+curl "http://localhost:8888/api/health/redis/daily?days=7"
+```
+
+返回格式见 [Redis Daily 文档](docs/redis_daily.md)。
 
 ## API 文档
 
@@ -158,4 +210,3 @@ curl -X POST http://localhost:8888/api/health/import \
 
 
 **注意：系统会自动识别中文版（导出.xml）和英文版（export.xml）文件**
-
